@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>simulator</name>
+  <version>0.0.0</version>
+  <description>A ROS and RViz-based simulator for our robust planning framework.</description>
+
+  <maintainer email="eratner@eecs.berkeley.edu">Ellis Ratner</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/HJReachability/distraction</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>rospkg</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>rospkg</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+
+  <export>
+  </export>
+</package>

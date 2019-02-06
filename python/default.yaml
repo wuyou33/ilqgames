@@ -1,8 +1,0 @@
-systems:
-  - ident: 0
-    initial_state: [0., 0., 0.]
-    dynamics:
-      state: x y th
-      input: v omega
-      dxdt: [v*cos(th), v*sin(th), omega]
-    visual: dubins_car

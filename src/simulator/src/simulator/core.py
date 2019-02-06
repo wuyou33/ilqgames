@@ -37,7 +37,7 @@ import numpy as np
 from sympy import symbols, Matrix
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.utilities.lambdify import lambdify
-from visual import dubins_car
+from visual import simple_car, custom
 
 
 class Integrator:
@@ -53,6 +53,25 @@ class RungeKutta(Integrator):
         Integrator.__init__(self)
 
     def integrate(self, t_init, x_init, u_init, f, step_size):
+        """
+        Numerically integrates a given function over a specific interval 
+        using the 4th-order Runge-Kutta method.
+
+        :param t_init: beginning of the interval of integration
+        :type t_init: float
+        :param x_init: initial state at the beginning of the interval
+        :type t_init: numpy.array
+        :param u_init: initial control input at the beginning of the interval
+        :type u_init: numpy.array
+        :param f: function to integrate, of the form f(t, x1, x2, ..., u1, u2, ...)
+                  where t is the time, (x1, x2, ...) is the state, and (u1, u2, ...)
+                  is the control input
+        :type f: function
+        :param step_size: the duration of the integration interval
+        :type step_size: float
+        :return: returns the state at time t_init + step_size
+        :type: numpy.array
+        """
         args = [t_init] + x_init.tolist() + u_init.tolist()
         k1 = step_size*f(*args).flatten()
 
@@ -68,7 +87,7 @@ class RungeKutta(Integrator):
         return x_init + (k1 + 2.*k2 + 2.*k3 + k4)/6.
 
 
-class DynamicSystem:
+class DynamicalSystem:
     def __init__(self, config):
         self.ident = config['ident']
 
@@ -107,16 +126,28 @@ class Simulator:
 
         # Load systems to simulate. 
         self.systems = {}
+        self.systems_visual = {}
         self.systems_state = {}
 
         if 'systems' in self.config:
             for sys_config in self.config['systems']:
-                system = DynamicSystem(sys_config)
+                system = DynamicalSystem(sys_config)
                 
                 self.systems[system.ident] = system
+                self.systems_visual[system.ident] = sys_config['visual']
                 self.systems_state[system.ident] = np.array(sys_config['initial_state'])
 
     def step(self, inputs, curr_t, dt):
+        """
+        Advances the simulation by the specified time step. 
+
+        :param inputs: mapping from system id to control inputs for that system
+        :type inputs: {int: np.array}
+        :param curr_t: current absolute time of the simulation
+        :type curr_t: float
+        :param dt: time step to advance the simulation by
+        :type dt: float
+        """
         for ident, sys in self.systems.iteritems():
             # Get the current state of the system. 
             curr_state = self.systems_state[ident]
@@ -131,10 +162,23 @@ class Simulator:
             self.systems_state[ident] = next_state
 
     def get_markers_ros(self):
-        # TODO fix this.
+        """
+        Produced a visualization of each dynamical system at the current state 
+        of the simulation.
+
+        :return: array of ROS Marker messages
+        :type: [Marker]
+        """
         markers = []
 
+        # Accumulate the ROS marker messages for each system. 
         for ident, state in self.systems_state.iteritems():
-            markers += dubins_car(ident, state)
+            if self.systems_visual[ident]['type'] == 'simple_car':
+                markers += simple_car(ident, state)
+            elif self.systems_visual[ident]['type'] == 'simple_car':
+                markers += custom(ident, state, self.systems_visual[ident]['params'])
+            else:
+                rospy.logwarn("Unknown visual type \"{}\"".format(
+                    self.systems_visual[indent]['type']))
 
         return markers

@@ -35,7 +35,8 @@ from visualization_msgs.msg import Marker
 import tf.transformations
 import rospy
 
-def dubins_car(ident, state):
+
+def simple_car(ident, state):
     marker = Marker()
     marker.header.frame_id = "world"
     marker.header.stamp = rospy.Time.now()
@@ -63,3 +64,9 @@ def dubins_car(ident, state):
     marker.lifetime = rospy.Duration()
 
     return [marker]
+
+
+def custom(ident, state, params):
+    # TODO implement this
+
+    return []
