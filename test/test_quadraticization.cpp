@@ -46,6 +46,7 @@
 #include <ilqgames/cost/proximity_barrier_cost.h>
 #include <ilqgames/cost/proximity_cost.h>
 #include <ilqgames/cost/quadratic_cost.h>
+#include <ilqgames/cost/quadratic_difference_cost.h>
 #include <ilqgames/cost/quadratic_polyline2_cost.h>
 #include <ilqgames/cost/semiquadratic_cost.h>
 #include <ilqgames/cost/semiquadratic_polyline2_cost.h>
@@ -204,5 +205,10 @@ TEST(ProximityBarrierCostTest, QuadraticizesCorrectly) {
 
 TEST(LocallyConvexProximityCostTest, QuadraticizesCorrectly) {
   LocallyConvexProximityCost cost(kCostWeight, {0, 1}, {2, 3}, 0.0);
+  CheckQuadraticization(cost);
+}
+
+TEST(QuadraticDifferenceCostTest, QuadraticizesCorrectly) {
+  QuadraticDifferenceCost cost(kCostWeight, {0, 1}, {2, 3});
   CheckQuadraticization(cost);
 }
