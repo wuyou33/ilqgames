@@ -74,12 +74,17 @@ class FinalTimeCost : public Cost {
     cost_->Quadraticize(t, input, hess, grad);
   }
 
+  // Reset threshold time.
+  void ResetThresholdTime(Time threshold_time) {
+    threshold_time_ = threshold_time;
+  }
+
  private:
   // Cost function.
   const std::shared_ptr<const Cost> cost_;
 
   // Time threshold after which to apply cost.
-  const Time threshold_time_;
+  Time threshold_time_;
 };  //\class Cost
 
 }  // namespace ilqgames
