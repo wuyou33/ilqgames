@@ -48,6 +48,7 @@
 #include <gtest/gtest.h>
 #include <math.h>
 #include <memory>
+#include <numeric>
 
 using namespace ilqgames;
 

@@ -45,6 +45,7 @@
 #include <ilqgames/utils/types.h>
 
 #include <glog/logging.h>
+#include <numeric>
 
 namespace ilqgames {
 
