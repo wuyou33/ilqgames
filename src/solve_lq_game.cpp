@@ -54,7 +54,8 @@
 // makes sense because there is no point assigning any state cost to the
 // initial state x_0.
 //
-// Returns strategies Ps, alphas.
+// Returns strategies Ps, alphas, and optionally populates a vector of value
+// functions.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -63,6 +64,7 @@
 #include <ilqgames/utils/linear_dynamics_approximation.h>
 #include <ilqgames/utils/quadratic_cost_approximation.h>
 #include <ilqgames/utils/strategy.h>
+#include <ilqgames/utils/value_function.h>
 
 #include <glog/logging.h>
 #include <vector>
@@ -73,11 +75,18 @@ std::vector<Strategy> SolveLQGame(
     const MultiPlayerIntegrableSystem& dynamics,
     const std::vector<LinearDynamicsApproximation>& linearization,
     const std::vector<std::vector<QuadraticCostApproximation>>&
-        quadraticization) {
+        quadraticization,
+    std::vector<ValueFunction>* values) {
   // Unpack horizon.
   const size_t horizon = linearization.size();
   CHECK_EQ(quadraticization.size(), horizon);
   CHECK_GT(horizon, 0);
+
+  // Maybe resize costates.
+  if (values) {
+    values->resize(dynamics.NumPlayers(),
+                   ValueFunction(horizon, dynamics.XDim()));
+  }
 
   // List of player-indexed strategies (each of which is a time-indexed
   // affine state error-feedback controller).
@@ -200,6 +209,13 @@ std::vector<Strategy> SolveLQGame(
         const MatrixXf& Rij = Rij_entry.second;
         zetas[ii] += Ps[jj].transpose() * Rij * alphas[jj];
         Zs[ii] += Ps[jj].transpose() * Rij * Ps[jj];
+      }
+
+      // Maybe populate value functions. Note that we're following remark 6.3 in
+      // Basar and Olsder here.
+      if (values) {
+        (*values)[ii].Zs[kk] = Zs[ii] - quad[ii].Q;
+        (*values)[ii].zetas[kk] = zetas[ii] - quad[ii].l;
       }
     }
   }

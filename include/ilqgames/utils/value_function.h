@@ -36,48 +36,46 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Core LQ game solver from Basar and Olsder, "Preliminary Notation for
-// Corollary 6.1" (pp. 279). All notation matches the text, though we
-// shall assume that `c` (additive drift in dynamics) is always `0`, which
-// holds because these dynamics are for delta x, delta us.
+// Container to store a single player's time-indexed value function.
 //
-// Solve a time-varying, finite horizon LQ game (finds closed-loop Nash
-// feedback strategies for both players).
-//
-// Assumes that dynamics are given by
-//           ``` dx_{k+1} = A_k dx_k + \sum_i Bs[i]_k du[i]_k ```
-//
-// NOTE: Bs, Qs, ls, R1s, R2s are all lists of lists of matrices.
-// NOTE: all indices of inner lists correspond to the "current time" k except
-// for those of the Qs, which correspond to the "next time" k+1. That is,
-// the kth entry of Qs[i] is the state cost corresponding to time step k+1. This
-// makes sense because there is no point assigning any state cost to the
-// initial state x_0.
-//
-// Returns strategies Ps, alphas, and optionally the value function for each
-// player (dropping constant terms);
+// Notation is taken from Basar and Olsder, Corollary 6.1.
+// -- zetas are the linear terms (i.e., linear in state x)
+// -- Zs are the quadratic terms
+// i.e. lambda (costate) = Z delta_x + zeta
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ILQGAMES_SOLVER_SOLVE_LQ_GAME_H
-#define ILQGAMES_SOLVER_SOLVE_LQ_GAME_H
+#ifndef ILQGAMES_UTILS_VALUE_FUNCTION_H
+#define ILQGAMES_UTILS_VALUE_FUNCTION_H
 
-#include <ilqgames/dynamics/multi_player_integrable_system.h>
-#include <ilqgames/utils/linear_dynamics_approximation.h>
-#include <ilqgames/utils/quadratic_cost_approximation.h>
-#include <ilqgames/utils/strategy.h>
-#include <ilqgames/utils/value_function.h>
+#include <ilqgames/utils/types.h>
 
+#include <glog/logging.h>
 #include <vector>
 
 namespace ilqgames {
 
-std::vector<Strategy> SolveLQGame(
-    const MultiPlayerIntegrableSystem& dynamics,
-    const std::vector<LinearDynamicsApproximation>& linearization,
-    const std::vector<std::vector<QuadraticCostApproximation>>&
-        quadraticization,
-    std::vector<ValueFunction>* values = nullptr);
+struct ValueFunction {
+  std::vector<MatrixXf> Zs;
+  std::vector<VectorXf> zetas;
+
+  // Preallocate memory during construction.
+  ValueFunction(size_t horizon, Dimension xdim) : Zs(horizon), zetas(horizon) {
+    for (size_t ii = 0; ii < horizon; ii++) {
+      Zs[ii] = MatrixXf::Zero(xdim, xdim);
+      zetas[ii] = VectorXf::Zero(xdim);
+    }
+  }
+
+  // Compute costate given time index and delta x.
+  VectorXf Costate(size_t time_index, const VectorXf& delta_x,
+                   const VectorXf& lambda_ref) const {
+    // NOTE: did we get the signs right?
+    return lambda_ref + Zs[time_index] * delta_x + zetas[time_index];
+  }
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};  // struct ValueFunction
 
 }  // namespace ilqgames
 
