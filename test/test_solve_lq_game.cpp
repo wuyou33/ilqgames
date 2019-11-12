@@ -158,13 +158,13 @@ class SolveLQGameTest : public ::testing::Test {
         0.0, VectorXf::Zero(2), {VectorXf::Zero(1), VectorXf::Zero(1)});
 
     const MatrixXf Q1 = MatrixXf::Identity(2, 2);
-    const MatrixXf Q2 = -Q1;
+    const MatrixXf Q2 = 2.0 * Q1;
     const VectorXf l1 = VectorXf::Zero(2);
     const VectorXf l2 = -l1;
 
     const MatrixXf R11 = MatrixXf::Identity(1, 1);
-    const MatrixXf R12 = MatrixXf::Zero(1, 1);
-    const MatrixXf R21 = MatrixXf::Zero(1, 1);
+    const MatrixXf R12 = 0.5 * MatrixXf::Identity(1, 1);
+    const MatrixXf R21 = 0.25 * MatrixXf::Identity(1, 1);
     const MatrixXf R22 = MatrixXf::Identity(1, 1);
 
     quadraticizations_ = std::vector<QuadraticCostApproximation>(
