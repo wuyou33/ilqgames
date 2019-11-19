@@ -55,6 +55,7 @@
 #include <ilqgames/utils/quadratic_cost_approximation.h>
 #include <ilqgames/utils/strategy.h>
 #include <ilqgames/utils/types.h>
+#include <ilqgames/utils/value_function.h>
 
 #include <gtest/gtest.h>
 #include <math.h>
@@ -191,12 +192,23 @@ class SolveLQGameTest : public ::testing::Test {
     player2_cost.AddControlCost(1, std::make_shared<QuadraticCost>(1.0, -1));
     player_costs_.push_back(player2_cost);
 
+    // Set a zero operating point.
+    operating_point_.reset(
+        new OperatingPoint(kNumTimeSteps, dynamics_->NumPlayers(), 0.0));
+    for (size_t kk = 0; kk < kNumTimeSteps; kk++) {
+      operating_point_->xs[kk] =
+          MatrixXf::Zero(dynamics_->XDim(), dynamics_->XDim());
+      for (PlayerIndex ii = 0; ii < dynamics_->NumPlayers(); ii++)
+        operating_point_->us[kk][ii] = VectorXf::Zero(dynamics_->UDim(ii));
+    }
+
     // Solve LQ game.
     lq_solution_ = SolveLQGame(
         *dynamics_,
         std::vector<LinearDynamicsApproximation>(kNumTimeSteps, linearization_),
         std::vector<std::vector<QuadraticCostApproximation>>(
-            kNumTimeSteps, quadraticizations_));
+            kNumTimeSteps, quadraticizations_),
+        &values_);
   }
 
   // Time parameters.
@@ -210,6 +222,13 @@ class SolveLQGameTest : public ::testing::Test {
 
   // Player costs.
   std::vector<PlayerCost> player_costs_;
+
+  // Value functions.
+  std::vector<ValueFunction> values_;
+
+  // Nominal operating point (zero, since this is just LQ).
+  // Unique pointer since operating points require constructor args.
+  std::unique_ptr<OperatingPoint> operating_point_;
 
   // Linearization and quadraticization.
   LinearDynamicsApproximation linearization_;
@@ -247,24 +266,28 @@ TEST_F(SolveLQGameTest, MatchesLyapunovIterations) {
 }
 
 TEST_F(SolveLQGameTest, LocalNashEquilibrium) {
-  // Set a zero operating point.
-  OperatingPoint operating_point(kNumTimeSteps, dynamics_->NumPlayers(), 0.0);
-  for (size_t kk = 0; kk < kNumTimeSteps; kk++) {
-    operating_point.xs[kk] =
-        MatrixXf::Zero(dynamics_->XDim(), dynamics_->XDim());
-    for (PlayerIndex ii = 0; ii < dynamics_->NumPlayers(); ii++)
-      operating_point.us[kk][ii] = VectorXf::Zero(dynamics_->UDim(ii));
-  }
-
   // Initial state.
   const VectorXf x0 = VectorXf::Ones(dynamics_->XDim());
 
+  // Check Nash conditions.
   constexpr float kMaxPerturbation = 0.1;
   constexpr size_t kNumPerturbationsPerPlayer = 100;
   EXPECT_TRUE(RandomCheckLocalNashEquilibrium(
-      player_costs_, lq_solution_, operating_point, *dynamics_, x0, kTimeStep,
+      player_costs_, lq_solution_, *operating_point_, *dynamics_, x0, kTimeStep,
       kMaxPerturbation, kNumPerturbationsPerPlayer));
 
-  EXPECT_TRUE(CheckSufficientLocalNashEquilibrium(player_costs_,
-                                                  operating_point, kTimeStep));
+  EXPECT_TRUE(CheckSufficientLocalNashEquilibrium(
+      player_costs_, *operating_point_, kTimeStep));
+}
+
+TEST_F(SolveLQGameTest, Costate) {
+  // Initial state.
+  const VectorXf x0 = VectorXf::Ones(dynamics_->XDim());
+
+  // Reference costate is zero, since this is LQ.
+  const VectorXf lambda_ref = VectorXf::Zero(dynamics_->XDim());
+
+  // Check if costates are
+  constexpr float kStepSize = 0.1;
+
 }
