@@ -72,7 +72,7 @@ namespace ilqgames {
 
 namespace {
 // Time.
-static constexpr Time kTimeStep = 0.1;      // s
+static constexpr Time kTimeStep = 2.0;      // s
 static constexpr Time kTimeHorizon = 10.0;  // s
 static constexpr size_t kNumTimeSteps =
     static_cast<size_t>(kTimeHorizon / kTimeStep);
@@ -81,8 +81,8 @@ static constexpr size_t kNumTimeSteps =
 static constexpr float kInterAxleLength = 4.0;  // m
 
 // Cost weights.
-static constexpr float kStateRegularization = 1.0;
-static constexpr float kControlRegularization = 5.0;
+static constexpr float kStateRegularization = 0.0;    // 1.0;
+static constexpr float kControlRegularization = 0.0;  // 5.0;
 
 static constexpr float kOmegaCostWeight = 0.1;
 static constexpr float kJerkCostWeight = 0.1;

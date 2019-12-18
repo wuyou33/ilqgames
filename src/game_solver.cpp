@@ -131,6 +131,8 @@ bool GameSolver::Solve(const VectorXf& x0,
   // Number of iterations, starting from 0.
   size_t num_iterations = 0;
 
+  float last_alpha_norm = std::numeric_limits<float>::infinity();
+
   // Log initial iterate.
   if (log) {
     log->AddSolverIterate(current_operating_point, current_strategies,
@@ -182,6 +184,23 @@ bool GameSolver::Solve(const VectorXf& x0,
     // Modify this LQ solution.
     if (!ModifyLQStrategies(current_operating_point, &current_strategies))
       return false;
+
+    // Norm of all the alphas.
+    const float alpha_norm = std::accumulate(
+        current_strategies.begin(), current_strategies.end(), 0.0,
+        [](float total, const Strategy& s) {
+          return total + std::accumulate(s.alphas.begin(), s.alphas.end(), 0.0,
+                                         [](float tot, const VectorXf& alpha) {
+                                           return tot + alpha.squaredNorm();
+                                         });
+        });
+
+    if (alpha_norm > last_alpha_norm) {
+      std::cout << "iter " << num_iterations << ": alpha norm increased by "
+                << alpha_norm - last_alpha_norm << std::endl;
+    }
+
+    last_alpha_norm = alpha_norm;
 
     // Log current iterate.
     if (log) {
